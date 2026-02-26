@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #f8fafc;
+  --color-foreground: #0f172a;
+  --color-primary: #2563eb;
+  --color-border: #e2e8f0;
+}
+
+/* v4 doesn't use @layer base in the same way for simple body styles */
+:root {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+body {
+  /* Instead of @apply, use standard CSS or ensure tailwind is imported */
+  font-family: Inter, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Glass Effect for that Lovable feel */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
