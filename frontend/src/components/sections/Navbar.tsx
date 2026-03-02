@@ -42,7 +42,7 @@ export default function Navbar() {
           </Link>
 
           {/* SIGN UP BUTTON (Main Action) */}
-          <Link href="/login">
+          <Link href="/register">
             <button className="px-8 py-3.5 bg-slate-950 text-white rounded-[1.2rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-slate-200 hover:bg-blue-600 hover:shadow-blue-100 transition-all active:scale-95 italic">
               Sign Up
             </button>

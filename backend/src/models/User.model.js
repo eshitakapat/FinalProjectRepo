@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       enum: ["patient", "doctor", "admin"],
-      required: true,
+      default: "patient",
     },
     email: {
       type: String,
@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
+      match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
     },
     password: {
       type: String,
