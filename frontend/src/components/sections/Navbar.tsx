@@ -35,11 +35,11 @@ export default function Navbar() {
         <div className="flex items-center gap-4">
           
           {/* SIGN IN BUTTON */}
-          <Link href="/login">
+          {/* <Link href="/login">
             <button className="px-6 py-2.5 font-black text-[11px] text-slate-500 hover:text-blue-600 uppercase tracking-[0.2em] transition-all italic">
               Sign In
             </button>
-          </Link>
+          </Link> */}
 
           {/* SIGN UP BUTTON (Main Action) */}
           <Link href="/register">
