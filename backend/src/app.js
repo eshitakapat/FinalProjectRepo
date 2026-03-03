@@ -1,8 +1,8 @@
 import express from "express";
 import cors from "cors";
-import authRoutes from "./routes/auth.routes.js";
-import testRoutes from "./routes/test.routes.js";
-import protectedRoutes from "./routes/protected.routes.js";
+
+import patientRoutes from "./routes/patient.routes.js";
+// (Later you can add doctorRoutes, adminRoutes the same way)
 
 const app = express();
 
@@ -11,15 +11,11 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use("/api/auth", authRoutes);
-app.use("/api", testRoutes);
-app.use("/api/protected", protectedRoutes);
+app.use("/api/patient", patientRoutes);
 
-// Test route
+// Health check route
 app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
 export default app;
-
-

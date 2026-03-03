@@ -1,7 +1,9 @@
-import User from "../models/User.model.js";
+import Patient from "../models/Patient.model.js";
 import generateToken from "../utils/generateToken.js";
 
-export const register = async (req, res) => {
+
+// 🔹 REGISTER PATIENT
+export const registerPatient = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -11,29 +13,28 @@ export const register = async (req, res) => {
       });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingPatient = await Patient.findOne({ email });
 
-    if (existingUser) {
+    if (existingPatient) {
       return res.status(400).json({
-        message: "User already exists",
+        message: "Patient already exists",
       });
     }
 
-    // 🔥 ALWAYS patient for public registration
-    const user = await User.create({
+    // Password hashing handled in schema pre("save")
+    const patient = await Patient.create({
       email,
       password,
-      role: "patient",
     });
 
-    const token = generateToken(user);
+    const token = generateToken(patient);
 
     res.status(201).json({
       token,
       user: {
-        id: user._id,
-        email: user.email,
-        role: user.role,
+        id: patient._id,
+        email: patient.email,
+        role: "patient",
       },
     });
 
@@ -43,19 +44,21 @@ export const register = async (req, res) => {
 };
 
 
-export const login = async (req, res) => {
+
+// 🔹 LOGIN PATIENT
+export const loginPatient = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    const patient = await Patient.findOne({ email });
 
-    if (!user) {
+    if (!patient) {
       return res.status(400).json({
         message: "Invalid credentials",
       });
     }
 
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await patient.comparePassword(password);
 
     if (!isMatch) {
       return res.status(400).json({
@@ -63,14 +66,14 @@ export const login = async (req, res) => {
       });
     }
 
-    const token = generateToken(user);
+    const token = generateToken(patient);
 
     res.status(200).json({
       token,
       user: {
-        id: user._id,
-        email: user.email,
-        role: user.role,
+        id: patient._id,
+        email: patient.email,
+        role: "patient",
       },
     });
 
