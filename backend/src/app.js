@@ -2,20 +2,43 @@ import express from "express";
 import cors from "cors";
 
 import patientRoutes from "./routes/patient.routes.js";
-// (Later you can add doctorRoutes, adminRoutes the same way)
+import doctorRoutes from "./routes/doctor.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 
 const app = express();
 
-// Middlewares
+// ======================
+// 🔹 Middlewares
+// ======================
 app.use(cors());
 app.use(express.json());
 
-// Routes
-app.use("/api/patient", patientRoutes);
 
-// Health check route
+// ======================
+// 🔹 Routes
+// ======================
+app.use("/api/patient", patientRoutes);
+app.use("/api/doctor", doctorRoutes);
+app.use("/api/admin", adminRoutes);
+
+
+// ======================
+// 🔹 Health Check
+// ======================
 app.get("/", (req, res) => {
-  res.send("API is running...");
+  res.status(200).json({
+    message: "API is running...",
+  });
+});
+
+
+// ======================
+// 🔹 404 Handler
+// ======================
+app.use((req, res) => {
+  res.status(404).json({
+    message: "Route not found",
+  });
 });
 
 export default app;

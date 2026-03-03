@@ -62,45 +62,55 @@ export default function LoginPage() {
     });
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    if (selectedRole !== "patient") {
-      setError("Only patient login is active currently.");
-      return;
-    }
+  if (!selectedRole) {
+    setError("Please select a role.");
+    return;
+  }
 
-    setIsLoggingIn(true);
-    setError("");
+  setIsLoggingIn(true);
+  setError("");
 
-    try {
-      const res = await fetch("http://localhost:5000/api/patient/login", {
+  try {
+    // 🔹 Dynamic endpoint based on selected role
+    const res = await fetch(
+      `http://localhost:5000/api/${selectedRole}/login`,
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ...formData,
-          role: "patient",
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Login failed");
+        body: JSON.stringify(formData),
       }
+    );
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+    const data = await res.json();
 
-      router.push("/patient");
-    } catch (err: any) {
-      setError(err.message);
+    if (!res.ok) {
+      throw new Error(data.message || "Login failed");
     }
 
-    setIsLoggingIn(false);
-  };
+    // 🔹 Store token & user
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+
+    // 🔹 Redirect based on role
+    if (selectedRole === "patient") {
+      router.push("/patient");
+    } else if (selectedRole === "doctor") {
+      router.push("/doctor");
+    } else if (selectedRole === "admin") {
+      router.push("/admin");
+    }
+
+  } catch (err: any) {
+    setError(err.message);
+  }
+
+  setIsLoggingIn(false);
+};
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 relative overflow-hidden">
