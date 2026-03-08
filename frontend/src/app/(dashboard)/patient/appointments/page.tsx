@@ -1,36 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Calendar,
   Clock,
   Video,
   MapPin,
-  Plus,
   ChevronRight,
   CheckCircle2,
   CalendarDays,
-  X,
-  ArrowLeft,
-  Mic,
-  MicOff,
-  Video as VideoIcon,
-  VideoOff,
-  MoreVertical,
-  Star,
-  ShieldCheck,
-  User,
-  MessageSquare,
-  FileText,
-  Download,
-  Monitor,
-  Activity,
-  Search,
-  Thermometer,
-  Droplets,
   Sparkles,
-  TrendingUp
+  User,
+  FileText,
+  Activity
 } from "lucide-react";
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -38,15 +20,10 @@ import { motion, AnimatePresence } from "framer-motion";
 /* ---------------- DATASET ---------------- */
 
 const doctorsList = [
-  { id:"as-1",name:"Dr. Ananya Sharma",role:"Senior Dermatologist",bio:"Chronic skin condition specialist with 15 years in clinical research.",rating:4.9,education:"MD - Stanford",availability:"Mon-Fri",type:"In-Person"},
-  { id:"mv-2",name:"Dr. Marcus Vane",role:"Clinical Specialist",bio:"Laser surgery and advanced diagnostics expert.",rating:4.8,education:"MD - Johns Hopkins",availability:"Tue-Sat",type:"Video"},
-  { id:"sp-3",name:"Dr. Sarah Paul",role:"Skin Esthetician",bio:"Focuses on aesthetic maintenance.",rating:5.0,education:"NYU Esthetics",availability:"Weekends",type:"In-Person"},
-  { id:"jw-4",name:"Dr. James Wilson",role:"Pathology Expert",bio:"Specialist in cellular analysis.",rating:4.7,education:"MD - Harvard",availability:"Mon-Wed",type:"Video"}
-];
-
-const prescriptions = [
-  { id:"RX-441",date:"Jan 25, 2026",doctor:"Dr. Sarah Paul",medicine:"Tretinoin 0.05% Cream",instructions:"Apply pea-sized amount at night.",status:"Active"},
-  { id:"RX-392",date:"Dec 12, 2025",doctor:"Dr. Marcus Vane",medicine:"Cetirizine 10mg",instructions:"One tablet daily after breakfast.",status:"Expired"}
+  { id:"as-1",name:"Dr. Ananya Sharma",type:"In-Person"},
+  { id:"mv-2",name:"Dr. Marcus Vane",type:"Video"},
+  { id:"sp-3",name:"Dr. Sarah Paul",type:"In-Person"},
+  { id:"jw-4",name:"Dr. James Wilson",type:"Video"}
 ];
 
 const timeSlots=["09:00 AM","10:30 AM","01:00 PM","02:30 PM","04:00 PM"];
@@ -58,9 +35,7 @@ const Button = ({children,onClick,className="",variant="primary",disabled=false}
 const variants:any={
 primary:"bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100",
 outline:"border border-slate-200 text-slate-600 hover:bg-slate-50",
-dark:"bg-slate-900 text-white hover:bg-slate-800",
-danger:"bg-rose-600 text-white hover:bg-rose-700",
-ghost:"bg-transparent text-slate-400 hover:text-indigo-600"
+dark:"bg-slate-900 text-white hover:bg-slate-800"
 };
 
 return(
@@ -78,19 +53,11 @@ className={`px-4 py-2 rounded-2xl transition-all active:scale-95 flex items-cent
 
 export default function UltimatePatientDashboard(){
 
-/* STATES */
-
 const[activeView,setActiveView]=useState("schedule");
-const[selectedDoc,setSelectedDoc]=useState<any>(null);
-
 const[isBooking,setIsBooking]=useState(false);
-const[isCalling,setIsCalling]=useState(false);
-const[showSymptomModal,setShowSymptomModal]=useState(false);
-
-const[micOn,setMicOn]=useState(true);
-const[videoOn,setVideoOn]=useState(true);
-
 const[step,setStep]=useState(1);
+
+const[appointments,setAppointments]=useState<any[]>([]);
 
 const[bookingData,setBookingData]=useState({
 doctor:"",
@@ -98,85 +65,89 @@ time:"",
 date:"Feb 12, 2026"
 });
 
-const [patientId, setPatientId] = useState<string | null>(null);
-const [appointments, setAppointments] = useState<any[]>([]);
+/* ---------------- FETCH APPOINTMENTS FROM MONGODB ---------------- */
 
-/* LOAD PATIENT ID */
-useEffect(() => {
-  const id = localStorage.getItem("patientId") || "guest";
-  setPatientId(id);
-}, []);
+useEffect(()=>{
 
-/* LOAD APPOINTMENTS FOR THAT PATIENT */
-useEffect(() => {
-  if (!patientId) return;
+const fetchAppointments = async()=>{
 
-  const saved = localStorage.getItem(`appointments_${patientId}`);
-  setAppointments(saved ? JSON.parse(saved) : []);
-}, [patientId]);
+try{
 
-/* SAVE APPOINTMENTS */
-useEffect(() => {
-  if (!patientId) return;
+const token = localStorage.getItem("token");
 
-  localStorage.setItem(
-    `appointments_${patientId}`,
-    JSON.stringify(appointments)
-  );
-}, [appointments, patientId]);
+const res = await fetch(
+"http://localhost:5000/api/appointments/my",
+{
+headers:{
+Authorization:`Bearer ${token}`
+}
+}
+);
 
-const[symptoms,setSymptoms]=useState([
-{date:"Jan 30",level:3,note:"Slight redness on left cheek"},
-{date:"Jan 28",level:5,note:"Dryness increased after wind exposure"}
-]);
+const data = await res.json();
 
-const[newSymptom,setNewSymptom]=useState({level:5,note:""});
+/* Handle both backend response styles */
 
-/* ---------------- FUNCTIONS ---------------- */
+setAppointments(data.appointments || data);
 
-const startBooking=(docName?:string)=>{
-setBookingData({doctor:docName||"",time:"",date:"Feb 12, 2026"});
-setStep(docName?2:1);
-setIsBooking(true);
-};
-
-const isSlotBooked=(time:string)=>{
-return appointments.some(a=>a.time===time);
-};
-
-
-
-const createAppointment=()=>{
-
-if(!bookingData.time||!bookingData.doctor) return;
-
-if(isSlotBooked(bookingData.time)){
-alert("Slot already booked");
-return;
+}catch(err){
+console.error("Fetch appointments error:",err);
 }
 
-const newAppointment={
-id:Date.now(),
-doctor:bookingData.doctor,
-time:bookingData.time,
-date:bookingData.date
 };
 
-setAppointments([...appointments,newAppointment]);
+fetchAppointments();
+
+},[]);
+
+/* ---------------- SLOT BLOCKING ---------------- */
+
+const isSlotBooked=(time:string)=>{
+
+return appointments.some(
+(a)=>a.time===time &&
+a.date===bookingData.date &&
+a.doctor===bookingData.doctor
+);
+
+};
+
+/* ---------------- CREATE APPOINTMENT ---------------- */
+
+const createAppointment = async()=>{
+
+if(!bookingData.time || !bookingData.doctor) return;
+
+try{
+
+const token = localStorage.getItem("token");
+
+const res = await fetch(
+"http://localhost:5000/api/appointments/create",
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+Authorization:`Bearer ${token}`
+},
+body:JSON.stringify(bookingData)
+}
+);
+
+const data = await res.json();
+
+const newAppointment = data.appointment || data;
+
+/* Update UI instantly */
+
+setAppointments(prev=>[...prev,newAppointment]);
+
 setStep(3);
-};
 
-const handleAddSymptom=()=>{
+}catch(err){
+console.error("Create appointment error:",err);
+}
 
-if(!newSymptom.note) return;
-
-const date=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
-
-setSymptoms([{...newSymptom,date},...symptoms]);
-
-setNewSymptom({level:5,note:""});
-
-setShowSymptomModal(false);
 };
 
 /* ================= UI ================= */
@@ -217,11 +188,6 @@ ${activeView===item.id?"bg-indigo-600 text-white":"text-slate-400 hover:bg-slate
 
 </nav>
 
-<div className="mt-auto bg-slate-900 rounded-[2rem] p-6 text-white">
-<p className="text-xs opacity-60 mb-1">Current Plan</p>
-<p className="font-bold text-lg italic">Premium Health</p>
-</div>
-
 </aside>
 
 {/* MAIN */}
@@ -240,7 +206,7 @@ ${activeView===item.id?"bg-indigo-600 text-white":"text-slate-400 hover:bg-slate
 My Schedule
 </h1>
 
-<Button onClick={()=>startBooking()} className="h-14 px-10">
+<Button onClick={()=>{setStep(1);setIsBooking(true);}} className="h-14 px-10">
 New Booking
 </Button>
 
@@ -256,14 +222,14 @@ NO APPOINTMENTS
 
 )}
 
-{appointments.map(appt=>{
+{appointments.map((appt:any)=>{
 
 const doc=doctorsList.find(d=>d.name===appt.doctor);
 
 return(
 
 <div
-key={appt.id}
+key={appt._id}
 className="bg-white p-8 rounded-[3rem] border flex justify-between items-center"
 >
 
@@ -290,7 +256,7 @@ className="bg-white p-8 rounded-[3rem] border flex justify-between items-center"
 
 </div>
 
-<Button variant="dark" onClick={()=>setIsCalling(true)}>
+<Button variant="dark">
 Join
 </Button>
 
@@ -330,6 +296,8 @@ animate={{scale:1,opacity:1}}
 className="bg-white p-12 rounded-[3rem] w-full max-w-xl relative"
 >
 
+{/* STEP 1 */}
+
 {step===1 &&(
 
 <div>
@@ -360,6 +328,8 @@ className="w-full p-4 border rounded-xl mb-3 flex justify-between"
 </div>
 
 )}
+
+{/* STEP 2 */}
 
 {step===2 &&(
 
@@ -411,6 +381,8 @@ Confirm Booking
 
 )}
 
+{/* STEP 3 */}
+
 {step===3 &&(
 
 <div className="text-center">
@@ -447,4 +419,5 @@ Back
 </div>
 
 );
+
 }

@@ -8,41 +8,46 @@ export const createAppointment = async (req, res) => {
 
   try {
 
-    const { time } = req.body;
+    const { doctor, date, time } = req.body;
 
-    if (!time) {
+    if (!doctor || !date || !time) {
       return res.status(400).json({
-        message: "Time is required"
+        message: "Doctor, date and time are required"
       });
     }
 
-    // CHECK IF SLOT IS ALREADY BOOKED
+    // Check if slot already booked for that doctor
     const existingAppointment = await Appointment.findOne({
+      doctor,
+      date,
       time,
       status: { $ne: "cancelled" }
     });
 
     if (existingAppointment) {
       return res.status(400).json({
-        message: "This time slot is already booked"
+        message: "This slot is already booked"
       });
     }
 
     const appointment = await Appointment.create({
       patient: req.user._id,
+      doctor,
+      date,
       time
     });
 
     res.status(201).json(appointment);
 
   } catch (error) {
+
     res.status(500).json({
       message: error.message
     });
+
   }
 
 };
-
 
 
 // ============================
@@ -59,9 +64,11 @@ export const getPatientAppointments = async (req, res) => {
     res.status(200).json(appointments);
 
   } catch (error) {
+
     res.status(500).json({
       message: error.message
     });
+
   }
 
 };
