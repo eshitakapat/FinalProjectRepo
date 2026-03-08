@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { 
   LayoutDashboard, User, Stethoscope, 
   Settings, LogOut, Calendar, 
@@ -30,6 +31,15 @@ const navigation = {
 export default function Sidebar({ role }: { role: 'patient' | 'doctor' | 'admin' }) {
   const pathname = usePathname();
   const menuItems = navigation[role];
+
+  const router = useRouter();
+
+const handleLogout = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  localStorage.removeItem("patientId");
+  router.push("/");
+};
 
   return (
     <div className="flex flex-col w-64 h-screen bg-white border-r border-slate-100 p-6 sticky top-0">

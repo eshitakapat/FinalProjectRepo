@@ -94,7 +94,11 @@ const handleLogin = async (e: React.FormEvent) => {
 
     // 🔹 Store token & user
     localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
+localStorage.setItem("user", JSON.stringify(data.user));
+
+if (selectedRole === "patient") {
+  localStorage.setItem("patientId", data.user.id); // ⭐ important
+}
 
     // 🔹 Redirect based on role
     if (selectedRole === "patient") {

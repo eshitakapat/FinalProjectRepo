@@ -1,7 +1,9 @@
 import Appointment from "../models/Appointment.model.js";
 
 
+// ============================
 // PATIENT BOOK APPOINTMENT
+// ============================
 export const createAppointment = async (req, res) => {
 
   try {
@@ -14,6 +16,18 @@ export const createAppointment = async (req, res) => {
       });
     }
 
+    // CHECK IF SLOT IS ALREADY BOOKED
+    const existingAppointment = await Appointment.findOne({
+      time,
+      status: { $ne: "cancelled" }
+    });
+
+    if (existingAppointment) {
+      return res.status(400).json({
+        message: "This time slot is already booked"
+      });
+    }
+
     const appointment = await Appointment.create({
       patient: req.user._id,
       time
@@ -22,14 +36,18 @@ export const createAppointment = async (req, res) => {
     res.status(201).json(appointment);
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: error.message
+    });
   }
 
 };
 
 
 
+// ============================
 // PATIENT VIEW THEIR APPOINTMENTS
+// ============================
 export const getPatientAppointments = async (req, res) => {
 
   try {
@@ -38,17 +56,21 @@ export const getPatientAppointments = async (req, res) => {
       patient: req.user._id
     });
 
-    res.json(appointments);
+    res.status(200).json(appointments);
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: error.message
+    });
   }
 
 };
 
 
 
+// ============================
 // DOCTOR VIEW ALL APPOINTMENTS
+// ============================
 export const getDoctorAppointments = async (req, res) => {
 
   try {
@@ -57,17 +79,21 @@ export const getDoctorAppointments = async (req, res) => {
       .find()
       .populate("patient", "email");
 
-    res.json(appointments);
+    res.status(200).json(appointments);
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: error.message
+    });
   }
 
 };
 
 
 
+// ============================
 // DOCTOR UPDATE STATUS
+// ============================
 export const updateAppointmentStatus = async (req, res) => {
 
   try {
@@ -80,10 +106,18 @@ export const updateAppointmentStatus = async (req, res) => {
       { new: true }
     );
 
-    res.json(appointment);
+    if (!appointment) {
+      return res.status(404).json({
+        message: "Appointment not found"
+      });
+    }
+
+    res.status(200).json(appointment);
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: error.message
+    });
   }
 
 };
