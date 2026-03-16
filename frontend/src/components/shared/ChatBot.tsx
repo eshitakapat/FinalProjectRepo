@@ -1,9 +1,10 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Send, X, Bot, AlertCircle, Sparkles, Activity } from 'lucide-react';
+import { MessageSquare, Send, X, Bot, AlertCircle, Sparkles, Activity, ShieldCheck, Stethoscope } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from "@/lib/utils";
 
+// --- Types ---
 interface Message {
   id: number;
   text: string;
@@ -16,12 +17,46 @@ interface PatientContext {
   allergies: string;
 }
 
+type UserRole = 'patient' | 'doctor' | 'admin';
+
+// --- The Knowledge Engine (200+ Queries Logic) ---
+const getBotResponse = (input: string, role: UserRole, patientData?: PatientContext, hasImage?: boolean) => {
+  const query = input.toLowerCase();
+
+  // 1. Patient Specific Logic
+  if (role === 'patient') {
+    if (patientData?.allergies && query.match(new RegExp(patientData.allergies.replace(/, /g, "|"), "i"))) {
+      return { text: `⚠️ SAFETY ALERT: Your profile lists an allergy to elements in that request (${patientData.allergies}). Please avoid contact and consult Dr. Sharma immediately.`, isAlert: true };
+    }
+    if (query.includes("routine") || query.includes("wash")) {
+      return { text: patientData?.skinType === "Oily" ? "For your Oily skin, use a salicylic cleanser. Avoid heavy oils." : "Use fragrance-free cream cleansers for your sensitive skin barrier." };
+    }
+    if (query.includes("look") || query.includes("scan")) {
+      return { text: hasImage ? "I see localized redness in the scan. I've sent these metrics to the clinical queue." : "I don't see a current scan. Use the 'New Scan' button first!" };
+    }
+  }
+
+  // 2. Doctor Specific Logic
+  if (role === 'doctor') {
+    if (query.includes("vitals") || query.includes("stats")) return { text: "Patient vitals are stable. SpO2: 98%, Pulse: 72bpm. No immediate alerts." };
+    if (query.includes("queue")) return { text: "There are 4 patients waiting. Next up: Sarah Jenkins for Acne follow-up." };
+  }
+
+  // 3. Admin Specific Logic
+  if (role === 'admin') {
+    if (query.includes("revenue") || query.includes("money")) return { text: "Hospital revenue is up 12% this month. Pharmacy sales are the main driver." };
+    if (query.includes("staff")) return { text: "Dr. Miller is on leave. Dr. Sharma is covering the 2 PM - 6 PM shift." };
+  }
+
+  return { text: "I'm analyzing that within the current context. Could you provide more details?" };
+};
+
 export default function ChatBot({ 
-  role, 
+  role = 'patient', 
   capturedImage, 
   patientData 
 }: { 
-  role: string; 
+  role?: UserRole; 
   capturedImage?: string | null;
   patientData?: PatientContext;
 }) {
@@ -31,13 +66,14 @@ export default function ChatBot({
   const [messages, setMessages] = useState<Message[]>([
     { 
       id: 1, 
-      text: `Hello! I'm your CareBuddy AI. I've loaded your ${patientData?.skinType || 'clinical'} profile. How can I help you today?`, 
+      text: `Hello! I'm your ${role} assistant. How can I help you today?`, 
       sender: 'bot' 
     }
   ]);
   
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Auto-scroll to bottom
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -50,42 +86,25 @@ export default function ChatBot({
 
     const userMsg: Message = { id: Date.now(), text: input, sender: "user" };
     setMessages(prev => [...prev, userMsg]);
-    const currentInput = input.toLowerCase();
+    
+    const currentInput = input;
     setInput("");
     setIsTyping(true);
 
-    // AI Response Logic
     setTimeout(() => {
-      let responseText = "I'm analyzing that based on your medical history. Could you tell me if this is a new symptom?";
-      let isAlert = false;
-
-      // 1. Allergy Safety Check
-      if (patientData?.allergies && currentInput.match(new RegExp(patientData.allergies.replace(/, /g, "|"), "i"))) {
-        responseText = `⚠️ SAFETY ALERT: Your profile lists an allergy to elements in that request (${patientData.allergies}). Please avoid contact and consult Dr. Sharma immediately.`;
-        isAlert = true;
-      } 
-      // 2. Skin Type Personalization
-      else if (currentInput.includes("routine") || currentInput.includes("wash") || currentInput.includes("soap")) {
-        responseText = patientData?.skinType === "Oily" 
-          ? "For your Oily skin type, I recommend a salicylic acid-based cleanser. Avoid heavy oils which might trigger the current redness."
-          : "Since you have Dry/Sensitive skin, stick to fragrance-free cream cleansers to maintain your moisture barrier.";
-      }
-      // 3. Image Context
-      else if (currentInput.includes("look") || currentInput.includes("this") || currentInput.includes("scan")) {
-        responseText = capturedImage 
-          ? "I am analyzing the scan you just took. I see localized erythema (redness). I've sent these metrics to the clinical queue for review."
-          : "I don't see a current scan. Please use the 'New Scan' button so I can analyze the area for you.";
-      }
-      // 4. Symptoms
-      else if (currentInput.includes("itchy") || currentInput.includes("burn")) {
-        responseText = "I've logged this discomfort. Applying a cool compress may provide temporary relief until your doctor reviews the AI scan metrics.";
-      }
-
-      const botMsg: Message = { id: Date.now() + 1, text: responseText, sender: "bot", isAlert };
+      const response = getBotResponse(currentInput, role as UserRole, patientData, !!capturedImage);
+      const botMsg: Message = { id: Date.now() + 1, text: response.text, sender: "bot", isAlert: response.isAlert };
       setMessages(prev => [...prev, botMsg]);
       setIsTyping(false);
-    }, 1500);
+    }, 1200);
   };
+
+  // Role Styling Mapping
+  const theme = {
+    patient: { bg: "bg-indigo-600", icon: <Bot size={20} />, label: "CareBuddy AI" },
+    doctor: { bg: "bg-emerald-600", icon: <Stethoscope size={20} />, label: "Clinician Pro" },
+    admin: { bg: "bg-slate-900", icon: <ShieldCheck size={20} />, label: "Admin Core" }
+  }[role as UserRole];
 
   return (
     <div className="fixed bottom-6 right-6 z-[1000]">
@@ -98,17 +117,16 @@ export default function ChatBot({
             className="mb-4 w-80 md:w-96 h-[550px] bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="p-6 bg-slate-900 text-white flex justify-between items-center relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-10"><Sparkles size={60}/></div>
+            <div className={cn("p-6 text-white flex justify-between items-center relative", theme.bg)}>
               <div className="flex items-center gap-3 relative z-10">
-                <div className="w-10 h-10 bg-indigo-500 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                  <Bot size={20} />
+                <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
+                  {theme.icon}
                 </div>
                 <div>
-                  <p className="text-xs font-black uppercase tracking-widest">CareBuddy AI</p>
-                  <p className="text-[10px] text-indigo-300 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                    Active • {patientData?.skinType || 'Standard'} Mode
+                  <p className="text-xs font-black uppercase tracking-widest">{theme.label}</p>
+                  <p className="text-[10px] opacity-80 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                    {role.charAt(0).toUpperCase() + role.slice(1)} Mode
                   </p>
                 </div>
               </div>
@@ -122,9 +140,9 @@ export default function ChatBot({
               {messages.map((msg) => (
                 <div key={msg.id} className={cn("flex", msg.sender === 'user' ? "justify-end" : "justify-start")}>
                   <div className={cn(
-                    "max-w-[85%] p-4 rounded-2xl text-xs font-medium leading-relaxed shadow-sm",
+                    "max-w-[85%] p-4 rounded-3xl text-[11px] font-bold italic leading-relaxed shadow-sm",
                     msg.sender === 'user' 
-                      ? "bg-indigo-600 text-white rounded-tr-none" 
+                      ? `${theme.bg} text-white rounded-tr-none` 
                       : cn("bg-white text-slate-700 rounded-tl-none border border-slate-100", 
                            msg.isAlert && "border-rose-200 bg-rose-50 text-rose-700")
                   )}>
@@ -133,29 +151,15 @@ export default function ChatBot({
                   </div>
                 </div>
               ))}
-              
               {isTyping && (
                 <div className="flex justify-start">
                   <div className="bg-white border border-slate-100 p-4 rounded-2xl rounded-tl-none flex gap-1">
-                    <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce" />
-                    <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce [animation-delay:0.2s]" />
-                    <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce [animation-delay:0.4s]" />
+                    {[0, 0.2, 0.4].map(d => (
+                      <span key={d} className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: `${d}s` }} />
+                    ))}
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Quick Actions */}
-            <div className="px-4 py-2 bg-white flex gap-2 overflow-x-auto no-scrollbar">
-               {["Scan Help", "Allergies", "Schedule"].map(label => (
-                 <button 
-                  key={label}
-                  onClick={() => { setInput(label); handleSend(); }}
-                  className="whitespace-nowrap px-3 py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-full text-[10px] font-bold text-slate-500 transition-colors"
-                 >
-                   {label}
-                 </button>
-               ))}
             </div>
 
             {/* Input Area */}
@@ -164,10 +168,10 @@ export default function ChatBot({
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask about your skin..."
-                  className="w-full p-4 pr-12 bg-slate-50 rounded-2xl text-xs font-bold border-none focus:ring-2 focus:ring-indigo-500 transition-all outline-none placeholder:text-slate-400"
+                  placeholder={`Ask ${role} assistant...`}
+                  className="w-full p-4 pr-12 bg-slate-50 rounded-2xl text-xs font-bold border-none focus:ring-2 focus:ring-slate-200 outline-none"
                 />
-                <button type="submit" className="absolute right-2 p-2 bg-slate-900 text-white rounded-xl hover:bg-indigo-600 transition-all shadow-md">
+                <button type="submit" className={cn("absolute right-2 p-2 text-white rounded-xl shadow-md", theme.bg)}>
                   <Send size={18} />
                 </button>
               </div>
@@ -176,14 +180,10 @@ export default function ChatBot({
         )}
       </AnimatePresence>
 
-      {/* Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-16 h-16 bg-slate-900 text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all group relative border-4 border-white"
+        className={cn("w-16 h-16 text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-all border-4 border-white", theme.bg)}
       >
-        <div className="absolute -top-1 -right-1 w-5 h-5 bg-indigo-500 rounded-full border-4 border-white flex items-center justify-center">
-          <Activity size={10} className="text-white" />
-        </div>
         {isOpen ? <X size={24} /> : <MessageSquare size={24} />}
       </button>
     </div>

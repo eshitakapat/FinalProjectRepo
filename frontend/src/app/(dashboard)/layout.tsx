@@ -6,17 +6,15 @@ import {
   Grid, Calendar, History, Settings, CreditCard, 
   LogOut, Bell, Search, Activity, User 
 } from "lucide-react";
+import ChatBot from "@/components/shared/ChatBot"; // 1. IMPORT YOUR CHATBOT
 
 export default function PatientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
   const handleLogout = () => {
-    // Remove auth data
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-
-    // Redirect to login
     router.replace("/login");
   };
 
@@ -29,11 +27,10 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
   ];
 
   return (
-    <div className="flex h-screen w-full bg-[#FBFCFD] overflow-hidden antialiased">
+    <div className="flex h-screen w-full bg-[#FBFCFD] overflow-hidden antialiased relative">
       
       {/* SIDEBAR */}
-      <aside className="w-72 border-r border-slate-100 flex flex-col flex-shrink-0 bg-white z-50">
-        
+      <aside className="w-72 border-r border-slate-100 flex flex-col flex-shrink-0 bg-white z-[50]">
         <div className="p-8 flex items-center gap-3">
           <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
             <Activity size={22} />
@@ -59,7 +56,6 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
           ))}
         </nav>
 
-        {/* LOGOUT */}
         <div className="p-6 border-t border-slate-50">
           <button
             onClick={handleLogout}
@@ -71,10 +67,8 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
       </aside>
 
       {/* CONTENT AREA */}
-      <div className="flex-1 flex flex-col min-w-0 bg-white overflow-hidden">
-        
+      <div className="flex-1 flex flex-col min-w-0 bg-white overflow-hidden relative">
         <header className="h-20 border-b border-slate-50 flex items-center justify-between px-10 bg-white sticky top-0 z-40">
-          
           <div className="relative w-full max-w-md">
             <Search className="absolute left-4 top-3 text-slate-300" size={18} />
             <input
@@ -95,6 +89,13 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
         <main className="flex-1 overflow-y-auto p-10 bg-[#FBFCFD]">
           {children}
         </main>
+
+        {/* 2. THE CHATBOT INTEGRATION */}
+        {/* We place it here so it floats over the main content area */}
+        <ChatBot 
+           role="patient" 
+           patientData={{ skinType: "Oily", allergies: "Latex" }} // Replace with real user data later
+        />
       </div>
     </div>
   );
