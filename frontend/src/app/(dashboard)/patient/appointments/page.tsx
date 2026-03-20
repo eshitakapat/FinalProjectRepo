@@ -114,7 +114,12 @@ export default function UltimatePatientDashboard() {
         });
         const data = await res.json();
         const list = Array.isArray(data) ? data : (data.appointments || []);
-        setAppointments(list);
+
+const cleaned = list.filter(
+  (a) => a.doctor && a.time && a.date
+);
+
+setAppointments(cleaned);
       } catch (err) {
         console.error("Fetch error:", err);
       }
@@ -122,14 +127,21 @@ export default function UltimatePatientDashboard() {
     fetchAppointments();
   }, []);
 
+  const normalize = (str: string) =>
+  (str || "").toLowerCase().replace("dr. ", "").trim();
+
   const isSlotBooked = (time: string) => {
     return appointments.some(
-      (a) => a.time === time && a.date === bookingData.date && a.doctor === bookingData.doctor
+      (a) => a.time === time && a.date === bookingData.date && normalize(a.doctor) === normalize(bookingData.doctor)
     );
   };
 
+ 
   const createAppointment = async () => {
-    if (!bookingData.time || !bookingData.doctor) return;
+    if (!bookingData.time || !bookingData.doctor.trim()) {
+  alert("Doctor and time are required");
+  return;
+}
     try {
       const token = localStorage.getItem("token");
       const res = await fetch("http://localhost:5000/api/appointments/create", {
@@ -137,8 +149,26 @@ export default function UltimatePatientDashboard() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(bookingData)
       });
-      const data = await res.json();
-      setAppointments(prev => [...prev, data.appointment || data]);
+
+       if (!res.ok) {
+      const errorText = await res.text();
+      console.error("❌ API ERROR:", errorText);
+      return;
+    }
+
+      const text = await res.text();
+    console.log("RAW RESPONSE:", text);
+      const data = text ? JSON.parse(text) : {};
+      console.log("PARSED DATA:", data);
+      const newAppt = data.appointment;
+
+if (!newAppt || !newAppt.doctor || !newAppt.time || !newAppt.date) {
+  console.error("Invalid appointment blocked:", newAppt);
+  return;
+}
+
+
+setAppointments(prev => [...prev, newAppt]);
       setStep(3);
     } catch (err) { console.error(err); }
   };
@@ -216,7 +246,7 @@ export default function UltimatePatientDashboard() {
                          {getInitial(appt.doctor)}
                        </div>
                        <div>
-                         <h3 className="text-2xl font-black italic text-slate-900 uppercase tracking-tighter">{appt.doctor || "Medical Specialist"}</h3>
+                         <h3 className="text-2xl font-black italic text-slate-900 uppercase tracking-tighter">{appt.doctor ? appt.doctor : "⚠️ Missing Doctor"}</h3>
                          <div className="flex gap-4 mt-3">
                            <span className="flex gap-2 items-center text-[10px] font-black uppercase text-slate-500 bg-slate-100/50 px-4 py-2 rounded-full italic"><Calendar size={12}/> {appt.date}</span>
                            <span className="flex gap-2 items-center text-[10px] font-black uppercase text-slate-500 bg-slate-100/50 px-4 py-2 rounded-full italic"><Clock size={12}/> {appt.time}</span>
@@ -254,7 +284,10 @@ export default function UltimatePatientDashboard() {
                   </div>
 
                   <Button 
-                    onClick={() => { setBookingData({ ...bookingData, doctor: doc.name }); setStep(2); setIsBooking(true); }} 
+                    onClick={() => { setBookingData(prev => ({
+  ...prev,
+  doctor: doc.name
+})); setStep(2); setIsBooking(true); }} 
                     className="w-full rounded-[2rem] h-16"
                   >
                     Schedule Session

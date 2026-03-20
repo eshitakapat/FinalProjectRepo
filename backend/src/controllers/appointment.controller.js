@@ -1,52 +1,86 @@
 import Appointment from "../models/Appointment.model.js";
+const normalizeDoctor = (str) =>
+  str.toLowerCase().replace(/dr\.?\s*/g, "").trim();
 
+const normalizeTime = (t) =>
+  t.replace(/^0/, "").trim();
+
+const formatDate = (date) =>
+  new Date(date).toISOString().split("T")[0];
 
 // ============================
 // PATIENT BOOK APPOINTMENT
 // ============================
 export const createAppointment = async (req, res) => {
-
   try {
-
     const { doctor, date, time } = req.body;
+    const formattedDate = formatDate(date);
 
+    // ✅ VALIDATION
     if (!doctor || !date || !time) {
       return res.status(400).json({
         message: "Doctor, date and time are required"
       });
     }
 
-    // Check if slot already booked for that doctor
-    const existingAppointment = await Appointment.findOne({
-      doctor,
-      date,
-      time,
-      status: { $ne: "cancelled" }
+    // ✅ DEBUG INPUT
+    console.log("Incoming:", { doctor, date, time });
+
+    // ✅ CHECK SLOT
+    const existingAppointment = await Appointment.find({
+       date: formattedDate,
+       status: { $ne: "rejected" }
     });
 
-    if (existingAppointment) {
-      return res.status(400).json({
-        message: "This slot is already booked"
-      });
-    }
+    // 🧠 Check clash manually
+const clash = existingAppointment.find(
+  (a) =>
+    normalizeDoctor(a.doctor) === normalizeDoctor(doctor) &&
+    normalizeTime(a.time) === normalizeTime(time)
+);
 
+console.log("Incoming:", { doctor, time });
+
+existingAppointment.forEach(a => {
+  console.log("DB:", {
+    doctor: a.doctor,
+    time: a.time
+  });
+});
+
+console.log("Appointments found:", existingAppointment.length);
+
+
+if (clash) {
+  return res.status(400).json({
+    message: "This slot is already booked"
+  });
+}
+
+
+    console.log("Before create");
+    // ✅ CREATE
     const appointment = await Appointment.create({
       patient: req.user._id,
       doctor,
-      date,
-      time
+      date: formattedDate,
+      time : normalizeTime(time)
     });
 
-    res.status(201).json(appointment);
+    // ✅ RETURN REAL DATA (THIS FIXES YOUR BUG)
+    res.status(201).json({
+      appointment
+    });
+
+     // 🔥 CRITICAL LOG
+    console.log("Created appointment:", appointment);
 
   } catch (error) {
-
+    console.error("CREATE ERROR:", error); // 🔥 don't hide it
     res.status(500).json({
       message: error.message
     });
-
   }
-
 };
 
 
