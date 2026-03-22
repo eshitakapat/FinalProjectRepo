@@ -42,7 +42,7 @@ export default function PatientDashboard() {
       context?.drawImage(videoRef.current, 0, 0);
       setImage(canvasRef.current.toDataURL("image/png"));
       stopCamera();
-      runAIScan();
+      runAIScan(canvasRef.current.toDataURL("image/png"));
     }
   };
 
@@ -52,20 +52,61 @@ export default function PatientDashboard() {
     setShowCamera(false);
   };
 
-  const runAIScan = () => {
+const runAIScan = async (fileOrBase64: any) => {
+  try {
     setIsScanning(true);
     setScanResult(null);
-    setTimeout(() => {
+
+    const formData = new FormData();
+
+    // ✅ helper function (YOU MISSED THIS)
+    const base64ToFile = (base64: string) => {
+      const arr = base64.split(",");
+      const mime = arr[0].match(/:(.*?);/)![1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+
+      return new File([u8arr], "capture.png", { type: mime });
+    };
+
+    // ✅ HANDLE BOTH CASES
+    if (fileOrBase64 instanceof File) {
+      formData.append("image", fileOrBase64);
+    } else {
+      const file = base64ToFile(fileOrBase64);
+      formData.append("image", file);
+    }
+
+    const response = await fetch("http://localhost:5000/api/analyze", {
+      method: "POST",
+      body: formData
+    });
+
+    // ✅ IMPORTANT (you were missing earlier)
+    if (!response.ok) {
+      const err = await response.text();
+      console.error("❌ BACKEND ERROR:", err);
       setIsScanning(false);
-      setScanResult({
-        disease: "Psoriasis Vulgaris",
-        intensity: "Moderate (Grade II)",
-        confidence: 96.2,
-        biomarkers: ["Silver Scaling", "Plaque Formation", "Erythematous Borders"],
-        plan: "Apply topical Vitamin D analogues. Maintain skin barrier with ceramides. Book a follow-up if spreading occurs."
-      });
-    }, 3000);
-  };
+      return;
+    }
+
+    const data = await response.json();
+
+    console.log("✅ AI RESPONSE:", data);
+
+    setScanResult(data);
+    setIsScanning(false);
+
+  } catch (err) {
+    console.error("AI ERROR:", err);
+    setIsScanning(false);
+  }
+};
 
   return (
     <div className="max-w-[1400px] mx-auto animate-in fade-in duration-500">
@@ -139,7 +180,7 @@ export default function PatientDashboard() {
                 const file = e.target.files?.[0];
                 if(file) {
                   const reader = new FileReader();
-                  reader.onload = (ev) => { setImage(ev.target?.result as string); runAIScan(); };
+                  reader.onload = (ev) => { setImage(ev.target?.result as string); runAIScan(file); };
                   reader.readAsDataURL(file);
                 }
               }} accept="image/*" />

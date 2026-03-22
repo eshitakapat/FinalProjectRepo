@@ -5,6 +5,7 @@ import patientRoutes from "./routes/patient.routes.js";
 import doctorRoutes from "./routes/doctor.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import appointmentRoutes from "./routes/appointment.routes.js";
+import analyzeRoutes from "./routes/analyze.routes.js";
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use("/api/patient", patientRoutes);
 app.use("/api/doctor", doctorRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/appointments", appointmentRoutes);
+app.use("/api/analyze", analyzeRoutes);
 
 
 // ======================
