@@ -82,7 +82,7 @@ const runAIScan = async (fileOrBase64: any) => {
       formData.append("image", file);
     }
 
-    const response = await fetch("http://localhost:5000/api/analyze", {
+    const response = await fetch("http://localhost:5000/api/ai/analyze", {
       method: "POST",
       body: formData
     });
