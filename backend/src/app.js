@@ -6,6 +6,7 @@ import doctorRoutes from "./routes/doctor.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import appointmentRoutes from "./routes/appointment.routes.js";
 import analyzeRoutes from "./routes/analyze.routes.js";
+import aiRoutes from "./routes/aiRoutes.js";
 
 const app = express();
 
@@ -14,7 +15,7 @@ const app = express();
 // 🔹 Middlewares
 // ======================
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 
 
 // ======================
@@ -25,6 +26,7 @@ app.use("/api/doctor", doctorRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/analyze", analyzeRoutes);
+app.use("/api/ai", aiRoutes);
 
 
 // ======================
