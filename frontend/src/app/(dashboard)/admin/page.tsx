@@ -1,27 +1,75 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { 
-  ShieldCheck, TrendingUp, Users, DollarSign, 
-  Activity, Download, Settings, Search,
-  Briefcase, BarChart3, AlertCircle, LayoutDashboard
+  ShieldCheck, TrendingUp, Users, Download, Settings,
+  LayoutDashboard, AlertCircle
 } from "lucide-react";
 import ChatBot from "@/components/shared/ChatBot";
 
+import {
+  PieChart,
+  Pie,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from "recharts";
+
 export default function AdminDashboard() {
   const [reportLoading, setReportLoading] = useState(false);
-
-  const staffStatus = [
+  const [appointments, setAppointments] = useState([]);
+  const [staffStatus, setStaffStatus] = useState([
     { name: "Dr. Sharma", dept: "Dermatology", status: "Active", load: "90%" },
     { name: "Dr. Smith", dept: "Cosmetic", status: "In Surgery", load: "100%" },
     { name: "Nurse Joy", dept: "OPD", status: "On Break", load: "0%" },
-  ];
+  ]);
+
+  // Fetch appointments from backend
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:5000/api/appointments/doctor", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error("Fetch failed");
+        const data = await res.json();
+        setAppointments(Array.isArray(data) ? data : data.appointments || []);
+      } catch (err) {
+        console.error("Failed to fetch appointments, using sample data", err);
+        // fallback sample
+        setAppointments([
+          { _id: "1", doctor: "Dr. Sharma", time: "10:00 AM", status: "Scheduled" },
+          { _id: "2", doctor: "Dr. Smith", time: "11:00 AM", status: "Completed" },
+          { _id: "3", doctor: "Nurse Joy", time: "12:00 PM", status: "Cancelled" },
+        ]);
+      }
+    };
+
+    fetchAppointments();
+    const interval = setInterval(fetchAppointments, 5000); // live refresh
+    return () => clearInterval(interval);
+  }, []);
+
+  // Generate appointment stats for pie chart
+  const getAppointmentStats = () => {
+    if (!appointments.length) return [
+      { name: "Scheduled", value: 5 },
+      { name: "Completed", value: 3 },
+      { name: "Cancelled", value: 2 },
+    ];
+    const count = {};
+    appointments.forEach(a => {
+      count[a.status] = (count[a.status] || 0) + 1;
+    });
+    return Object.entries(count).map(([name, value]) => ({ name, value }));
+  };
 
   return (
     <div className="space-y-8 pb-20">
-      {/* 1. Header: Command Controls */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -50,7 +98,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* 2. Global KPIs (Your original stats + Growth) */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="p-6 flex items-center gap-5 bg-white border-none shadow-sm hover:shadow-md transition-shadow rounded-[2rem]">
           <div className="p-4 bg-blue-50 text-blue-600 rounded-[1.5rem] shadow-inner">
@@ -71,7 +119,7 @@ export default function AdminDashboard() {
           </div>
           <div className="flex-1">
              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Active Staff</p>
-             <p className="text-3xl font-black text-slate-900">12 <span className="text-lg text-slate-300">/ 15</span></p>
+             <p className="text-3xl font-black text-slate-900">{staffStatus.length} <span className="text-lg text-slate-300">/ 15</span></p>
           </div>
         </Card>
 
@@ -89,35 +137,34 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
+      {/* Operational Insights + Sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* 3. Operational Insights */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Pie chart showing appointment statuses */}
           <Card className="p-8 border-none shadow-sm bg-white rounded-[2.5rem]">
             <div className="flex justify-between items-center mb-10">
-              <h3 className="font-bold text-xl text-slate-900 tracking-tight">Department Traffic</h3>
+              <h3 className="font-bold text-xl text-slate-900 tracking-tight">Appointment Status</h3>
               <Badge variant="outline" className="border-slate-100 text-slate-400">Past 24 Hours</Badge>
             </div>
-            
-            {/* Visual Analytics Bar Chart */}
-            <div className="h-48 w-full flex items-end justify-between gap-4 px-2">
-              {[35, 60, 45, 90, 55, 70].map((height, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-3">
-                  <div 
-                    className="w-full bg-slate-50 rounded-2xl relative group overflow-hidden transition-all hover:bg-indigo-50" 
-                    style={{ height: `100%` }}
-                  >
-                    <div 
-                      className="absolute bottom-0 left-0 w-full bg-indigo-500 rounded-t-xl transition-all duration-1000" 
-                      style={{ height: `${height}%` }}
-                    />
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-400">Wing {i+1}</span>
-                </div>
-              ))}
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={getAppointmentStats()}
+                    dataKey="value"
+                    nameKey="name"
+                    outerRadius={80}
+                    label
+                    fill="#6366f1"
+                  />
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
           </Card>
 
-          {/* Room Availability Map (Your requested feature, now styled) */}
+          {/* Room Availability Map */}
           <Card className="p-8 border-2 border-dashed border-slate-200 bg-slate-50/50 rounded-[2.5rem] relative group overflow-hidden">
              <div className="flex flex-col items-center justify-center py-10">
                 <LayoutDashboard className="text-slate-300 mb-4 group-hover:text-indigo-400 transition-colors" size={48} />
@@ -130,7 +177,7 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
-        {/* 4. Staff Monitoring Sidebar */}
+        {/* Staff + Alerts Sidebar */}
         <div className="space-y-6">
           <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest">Live Staffing</h2>
           <Card className="p-6 border-none shadow-sm bg-white rounded-[2rem]">
@@ -164,7 +211,6 @@ export default function AdminDashboard() {
             </Button>
           </Card>
 
-          {/* System Alerts */}
           <Card className="p-6 bg-rose-50 border-none rounded-[2rem]">
             <div className="flex items-center gap-2 mb-4 text-rose-600">
               <AlertCircle size={18} />
@@ -180,8 +226,8 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* 5. The Admin AI Chatbot */}
+      {/* Admin ChatBot */}
       <ChatBot role="admin" />
     </div>
   );
-}``
+}

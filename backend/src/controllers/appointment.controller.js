@@ -113,21 +113,20 @@ export const getPatientAppointments = async (req, res) => {
 // DOCTOR VIEW ALL APPOINTMENTS
 // ============================
 export const getDoctorAppointments = async (req, res) => {
-
   try {
-
     const appointments = await Appointment
       .find()
-      .populate("patient", "email");
+      .populate("patient", "email"); // keep email only (safe)
 
-    res.status(200).json(appointments);
+    res.status(200).json({
+      appointments // ✅ IMPORTANT: wrapped in object
+    });
 
   } catch (error) {
     res.status(500).json({
       message: error.message
     });
   }
-
 };
 
 
@@ -135,17 +134,19 @@ export const getDoctorAppointments = async (req, res) => {
 // ============================
 // DOCTOR UPDATE STATUS
 // ============================
+
 export const updateAppointmentStatus = async (req, res) => {
-
   try {
-
     const { status } = req.body;
 
-    const appointment = await Appointment.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    );
+    // ✅ VALIDATION (very important)
+    if (!["approved", "rejected", "completed"].includes(status)) {
+      return res.status(400).json({
+        message: "Invalid status"
+      });
+    }
+
+    const appointment = await Appointment.findById(req.params.id);
 
     if (!appointment) {
       return res.status(404).json({
@@ -153,12 +154,17 @@ export const updateAppointmentStatus = async (req, res) => {
       });
     }
 
-    res.status(200).json(appointment);
+    appointment.status = status;
+
+    await appointment.save();
+
+    res.status(200).json({
+      appointment // ✅ consistent response
+    });
 
   } catch (error) {
     res.status(500).json({
       message: error.message
     });
   }
-
 };

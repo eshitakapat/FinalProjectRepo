@@ -1,14 +1,12 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { 
-  CheckCircle2, Zap, ChevronRight, Smartphone, 
-  CreditCard, Building2, ShieldCheck, Stethoscope, Crown 
+  CheckCircle2, Zap, ChevronRight, ShieldCheck, Stethoscope, Crown 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 declare global { interface Window { Razorpay: any; } }
 
-// 1. DATA DEFINITIONS (LOCKED)
 const PLANS = [
   { id: "bronze", name: "Bronze", price: 299, color: "text-orange-500", bg: "bg-orange-50", features: ["Monthly Skin Scan", "AI Chat Access", "Digital Records"] },
   { id: "silver", name: "Silver", price: 599, color: "text-slate-400", bg: "bg-slate-50", features: ["Everything in Bronze", "1 Specialist Call", "Priority Support"] },
@@ -16,34 +14,10 @@ const PLANS = [
 ];
 
 const DOCTORS = [
-  { 
-    id: "as-1", 
-    name: "Dr. Ananya Sharma", 
-    type: "In-Person", 
-    role: "Senior Dermatologist",
-    fee: 1200 
-  },
-  { 
-    id: "mv-2", 
-    name: "Dr. Marcus Vane", 
-    type: "Video", 
-    role: "Clinical Pathologist",
-    fee: 1000 
-  },
-  { 
-    id: "sp-3", 
-    name: "Dr. Sarah Paul", 
-    type: "In-Person", 
-    role: "Pediatric Dermatologist",
-    fee: 900 
-  },
-  { 
-    id: "jw-4", 
-    name: "Dr. James Wilson", 
-    type: "Video", 
-    role: "Aesthetic Consultant",
-    fee: 1100 
-  }
+  { id: "as-1", name: "Dr. Ananya Sharma", type: "In-Person", role: "Senior Dermatologist", fee: 1200 },
+  { id: "mv-2", name: "Dr. Marcus Vane", type: "Video", role: "Clinical Pathologist", fee: 1000 },
+  { id: "sp-3", name: "Dr. Sarah Paul", type: "In-Person", role: "Pediatric Dermatologist", fee: 900 },
+  { id: "jw-4", name: "Dr. James Wilson", type: "Video", role: "Aesthetic Consultant", fee: 1100 }
 ];
 
 export default function ProfessionalBilling() {
@@ -62,31 +36,49 @@ export default function ProfessionalBilling() {
   const currentTotal = paymentCategory === "plan" ? selectedPlan.price : selectedDoctor.fee;
 
   const handlePayment = () => {
-    if (!window.Razorpay) return alert("Gateway offline. Check connection.");
+    if (!window.Razorpay) return alert("Razorpay script not loaded yet.");
     setIsLoading(true);
 
     const options = {
-      key: "rzp_test_YOUR_KEY", 
-      amount: currentTotal * 100, 
+      key: "rzp_test_SaW9XkdtU0ndHb", // Razorpay TEST key
+      amount: currentTotal * 100, // in paise
       currency: "INR",
       name: "CareFlow AI",
-      description: paymentCategory === "plan" ? `${selectedPlan.name} Subscription` : `Consultation: ${selectedDoctor.name}`,
+      description:
+        paymentCategory === "plan"
+          ? `${selectedPlan.name} Subscription`
+          : `Consultation: ${selectedDoctor.name}`,
+      prefill: { name: "Demo Patient", email: "patient@careflow.com" },
+      theme: { color: "#2563eb" },
+
+      // ✅ Force only Indian/test cards
+      config: {
+        display: {
+          blocks: {
+            card: { filters: { exclude: { international: true } } }
+          }
+        }
+      },
+
       handler: (res: any) => {
         setIsLoading(false);
-        alert(`Payment Success! ID: ${res.razorpay_payment_id}`);
+        alert(`✅ Payment Success! Payment ID: ${res.razorpay_payment_id}`);
       },
-      prefill: { name: "CareFlow Patient", email: "patient@careflow.com" },
-      theme: { color: "#2563eb" },
     };
 
     const rzp = new window.Razorpay(options);
+
+    rzp.on("payment.failed", (response: any) => {
+      setIsLoading(false);
+      alert(`❌ Payment Failed: ${response.error.description}`);
+    });
+
     rzp.open();
-    setIsLoading(false);
   };
 
   return (
     <div className="max-w-7xl mx-auto pb-24 px-4 pt-10 animate-in fade-in duration-700">
-      {/* HEADER SECTION */}
+      {/* HEADER */}
       <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-8">
         <div>
           <h1 className="text-6xl font-black italic tracking-tighter text-slate-900 uppercase leading-none">
@@ -120,7 +112,6 @@ export default function ProfessionalBilling() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         <div className="lg:col-span-8 space-y-12">
-          
           {/* SELECTION AREA */}
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             {paymentCategory === "plan" ? (
@@ -183,14 +174,11 @@ export default function ProfessionalBilling() {
               </div>
             )}
           </div>
-
-          
         </div>
 
         {/* SUMMARY SIDEBAR */}
         <div className="lg:col-span-4">
           <div className="bg-slate-950 text-white p-12 rounded-[4.5rem] sticky top-8 border border-slate-800 shadow-3xl overflow-hidden">
-            {/* Ambient Background Glow */}
             <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-600/20 rounded-full blur-[90px]" />
             
             <h4 className="text-[11px] font-black uppercase opacity-30 mb-12 tracking-[0.4em] italic text-center">Summary</h4>
