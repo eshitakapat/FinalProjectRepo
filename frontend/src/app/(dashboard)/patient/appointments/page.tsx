@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import type { MouseEventHandler, ReactNode } from "react";
 import {
   Calendar,
   Clock,
@@ -17,6 +18,50 @@ import {
 } from "lucide-react";
 
 import { motion, AnimatePresence } from "framer-motion";
+
+interface Doctor {
+  id: string;
+  name: string;
+  type: string;
+  role: string;
+  bio: string;
+  education: string;
+}
+
+interface Appointment {
+  _id?: string;
+  doctor: string;
+  time: string;
+  date: string;
+}
+
+interface SymptomLog {
+  doc: string;
+  note: string;
+  severity: number;
+  date: string;
+}
+
+interface SymptomData {
+  doctor: string;
+  severity: number;
+  notes: string;
+  date: string;
+}
+
+interface BookingData {
+  doctor: string;
+  time: string;
+  date: string;
+}
+
+interface ButtonProps {
+  children: ReactNode;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
+  className?: string;
+  variant?: "primary" | "outline" | "dark";
+  disabled?: boolean;
+}
 
 /* ---------------- DATASET ---------------- */
 
@@ -59,8 +104,8 @@ const timeSlots = ["09:00 AM", "10:30 AM", "01:00 PM", "02:30 PM", "04:00 PM"];
 
 /* ---------------- REUSABLE BUTTON ---------------- */
 
-const Button = ({ children, onClick, className = "", variant = "primary", disabled = false }: any) => {
-  const variants: any = {
+const Button = ({ children, onClick, className = "", variant = "primary", disabled = false }: ButtonProps) => {
+  const variants: Record<NonNullable<ButtonProps["variant"]>, string> = {
     primary: "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100",
     outline: "border-2 border-slate-100 text-slate-600 hover:bg-slate-50",
     dark: "bg-slate-900 text-white hover:bg-slate-800"
@@ -85,21 +130,21 @@ export default function UltimatePatientDashboard() {
   const [isLogging, setIsLogging] = useState(false);
   const [logSuccess, setLogSuccess] = useState(false);
   const [step, setStep] = useState(1);
-  const [appointments, setAppointments] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   
-  const [symptomLogs, setSymptomLogs] = useState<any[]>([
+  const [symptomLogs, setSymptomLogs] = useState<SymptomLog[]>([
     { doc: "Dr. Ananya Sharma", note: "Mild redness on cheeks", severity: 3, date: "Mar 08" },
     { doc: "Dr. Marcus Vane", note: "Dryness improved after lotion", severity: 1, date: "Mar 05" }
   ]);
 
-  const [symptomData, setSymptomData] = useState({
+  const [symptomData, setSymptomData] = useState<SymptomData>({
     doctor: "",
     severity: 5,
     notes: "",
     date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   });
 
-  const [bookingData, setBookingData] = useState({
+  const [bookingData, setBookingData] = useState<BookingData>({
     doctor: "",
     time: "",
     date: "Feb 12, 2026"
@@ -113,10 +158,10 @@ export default function UltimatePatientDashboard() {
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
-        const list = Array.isArray(data) ? data : (data.appointments || []);
+        const list: Appointment[] = Array.isArray(data) ? data : (data.appointments || []);
 
 const cleaned = list.filter(
-  (a) => a.doctor && a.time && a.date
+  (a: Appointment) => a.doctor && a.time && a.date
 );
 
 setAppointments(cleaned);
@@ -239,7 +284,7 @@ setAppointments(prev => [...prev, newAppt]);
                    <p className="font-black italic uppercase tracking-widest text-xs">No Upcoming Visits</p>
                 </div>
               ) : (
-                appointments.map((appt: any, idx: number) => (
+                appointments.map((appt: Appointment, idx: number) => (
                   <div key={appt._id || idx} className="bg-white/90 backdrop-blur-md p-10 rounded-[3.5rem] shadow-sm border border-white flex justify-between items-center group hover:shadow-2xl transition-all">
                     <div className="flex items-center gap-8">
                        <div className="w-16 h-16 bg-slate-50 rounded-3xl flex items-center justify-center font-black text-2xl text-indigo-600 italic">
