@@ -17,9 +17,16 @@ import {
   ResponsiveContainer
 } from "recharts";
 
+type Appointment = {
+  _id: string;
+  doctor: string;
+  time: string;
+  status: string;
+};
+
 export default function AdminDashboard() {
   const [reportLoading, setReportLoading] = useState(false);
-  const [appointments, setAppointments] = useState([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [staffStatus, setStaffStatus] = useState([
     { name: "Dr. Sharma", dept: "Dermatology", status: "Active", load: "90%" },
     { name: "Dr. Smith", dept: "Cosmetic", status: "In Surgery", load: "100%" },
@@ -60,7 +67,7 @@ export default function AdminDashboard() {
       { name: "Completed", value: 3 },
       { name: "Cancelled", value: 2 },
     ];
-    const count = {};
+    const count: Record<string, number> = {};
     appointments.forEach(a => {
       count[a.status] = (count[a.status] || 0) + 1;
     });

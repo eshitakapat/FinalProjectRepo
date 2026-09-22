@@ -8,8 +8,17 @@ import {
   ChevronRight
 } from "lucide-react";
 
+type Appointment = {
+  _id: string;
+  patient?: { email?: string };
+  doctor?: string;
+  date?: string;
+  time?: string;
+  status?: string;
+};
+
 export default function DoctorDashboard() {
-  const [appointments, setAppointments] = useState([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
 
   // ✅ FETCH FROM BACKEND
   useEffect(() => {
@@ -42,7 +51,7 @@ const pending = appointments?.filter(a => a.status === "pending")?.length || 0;
 const approved = appointments?.filter(a => a.status === "approved")?.length || 0;
 const completed = appointments?.filter(a => a.status === "completed")?.length || 0;
   // ✅ STATUS UPDATE
-  const updateStatus = async (id, status) => {
+  const updateStatus = async (id: string, status: string) => {
     try {
       const token = localStorage.getItem("token");
 
