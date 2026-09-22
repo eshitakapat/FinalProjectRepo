@@ -15,7 +15,7 @@ const app = express();
 // 🔹 CORS Configuration
 // ======================
 const allowedOrigins = [
-  "http://localhost:3000",
+  "https://final-project-repo-efph.vercel.app",
   "http://127.0.0.1:3000",
   process.env.FRONTEND_URL, // e.g., https://careflow-frontend.vercel.app
 ].filter(Boolean);
