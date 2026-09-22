@@ -131,11 +131,7 @@ export default function ProfessionalBilling() {
     try {
       const userInfo = getAuthenticatedUser();
 
-      const options: RazorpayOptions & {
-        modal: {
-          ondismiss: () => void;
-        };
-      } = {
+      const options: RazorpayOptions = {
         key: razorpayKey,
         amount: currentTotal * 100, // Amount in paise
         currency: "INR",

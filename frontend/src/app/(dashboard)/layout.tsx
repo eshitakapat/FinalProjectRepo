@@ -21,9 +21,9 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
   const menuItems = [
     { name: "My Skin", path: "/patient", icon: <Grid size={20} /> },
     { name: "Appointments", path: "/patient/appointments", icon: <Calendar size={20} /> },
-    { name: "Medical Records", path: "/patient/medical-records", icon: <History size={20} /> },
+    // { name: "Medical Records", path: "/patient/medical-records", icon: <History size={20} /> },
     { name: "Billing & Plans", path: "/patient/billing", icon: <CreditCard size={20} /> },
-    { name: "Settings", path: "/patient/settings", icon: <Settings size={20} /> },
+    // { name: "Settings", path: "/patient/settings", icon: <Settings size={20} /> },
   ];
 
   return (
