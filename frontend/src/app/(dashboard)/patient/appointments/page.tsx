@@ -33,6 +33,7 @@ interface Appointment {
   doctor: string;
   time: string;
   date: string;
+  status?: "pending" | "approved" | "rejected" | string;
 }
 
 interface SymptomLog {
