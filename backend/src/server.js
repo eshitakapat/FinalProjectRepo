@@ -1,12 +1,7 @@
-import "dotenv/config";        // ✅ loads env as an import, before other modules
+const serverless = require("serverless-http");
 
-import app from "./app.js";
-import connectDB from "./config/db.js";
+// ... your existing express setup (app.use(...), app.get(...), etc.) ...
 
-const PORT = process.env.PORT || 5000;
-
-connectDB();
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+// Instead of app.listen(5000, ...), export the serverless handler
+module.exports = app;
+module.exports.handler = serverless(app);
