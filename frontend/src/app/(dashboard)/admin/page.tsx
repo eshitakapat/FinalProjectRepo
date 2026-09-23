@@ -56,7 +56,7 @@ export default function AdminDashboard() {
     setIsMounted(true);
   }, []);
 
-  // Fetch appointments from backend with abort signal and env variable
+  // Fetch appointments from backend with abort signal and 
   const fetchAppointments = useCallback(async (signal?: AbortSignal) => {
     setIsRefreshing(true);
     try {
